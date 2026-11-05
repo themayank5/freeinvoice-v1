@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>GST Invoice Generator</title>
+  <meta name="description"
+    content="Generate professional GST-compliant tax invoices instantly with UPI QR codes, bank details, and one-click PDF export.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="style.css" rel="stylesheet">
+</head>
+
+<body>
+
+  <!-- ===================== SIDEBAR ===================== -->
+  <aside class="sidebar no-print" id="sidebar">
+
+    <div class="sidebar-brand">
+      <div class="brand-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+          <path d="M7 8h10M7 12h10M7 16h6" stroke="#fff" stroke-width="2.2" stroke-linecap="round" />
+        </svg>
+      </div>
+      <div>
+        <div class="brand-name">InvoiceGen</div>
+        <div class="brand-sub">Get Free GST Invoice</div>
+      </div>
+    </div>
+
+    <div class="sidebar-section-label">Invoice Sections</div>
+    <nav class="sidebar-nav" aria-label="Invoice sections">
+      <button class="nav-item" data-edit="seller" id="nav-seller">
+        <svg class="nav-icon-svg" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd"
+            d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4zm3 1h2v2H7V5zm2 4H7v2h2V9zm2-4h2v2h-2V5zm2 4h-2v2h2V9z"
+            clip-rule="evenodd" />
+        </svg>
+        Seller Info
+      </button>
+      <button class="nav-item" data-edit="meta" id="nav-meta">
+        <svg class="nav-icon-svg" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd"
+            d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z"
+            clip-rule="evenodd" />
+        </svg>
+        Invoice Details
+      </button>
+      <button class="nav-item" data-edit="customer" id="nav-customer">
+        <svg class="nav-icon-svg" viewBox="0 0 20 20" fill="currentColor">
+          <path d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" />
+        </svg>
+        Customer
+      </button>
+      <button class="nav-item d-none" data-edit="customerDirectory" id="nav-customer-directory">
+        <svg class="nav-icon-svg" viewBox="0 0 20 20" fill="currentColor">
+          <path d="M7 2a3 3 0 100 6 3 3 0 000-6zM1 16a6 6 0 1112 0v2H1v-2zm14-8a2.5 2.5 0 100-5 2.5 2.5 0 000 5zm1.5 2c-.9 0-1.73.25-2.43.68A7.9 7.9 0 0116 16v2h3v-2a6 6 0 00-2.5-6z" />
+        </svg>
+        Customer Details
+      </button>
+      <button class="nav-item" data-edit="items" id="nav-items">
+        <svg class="nav-icon-svg" viewBox="0 0 20 20" fill="currentColor">
+          <path
+            d="M3 1a1 1 0 000 2h1.22l.305 1.222a.997.997 0 00.01.042l1.358 5.43-.893.892C3.74 11.846 4.632 14 6.414 14H15a1 1 0 000-2H6.414l1-1H14a1 1 0 00.894-.553l3-6A1 1 0 0017 3H6.28l-.31-1.243A1 1 0 005 1H3z" />
+        </svg>
+        Line Items
+      </button>
+      <button class="nav-item" data-edit="bank" id="nav-bank">
+        <svg class="nav-icon-svg" viewBox="0 0 20 20" fill="currentColor">
+          <path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4zM2 10h16v4a2 2 0 01-2 2H4a2 2 0 01-2-2v-4z" />
+        </svg>
+        Bank &amp; UPI
+      </button>
+      <button class="nav-item" data-edit="sign" id="nav-sign">
+        <svg class="nav-icon-svg" viewBox="0 0 20 20" fill="currentColor">
+          <path
+            d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+        </svg>
+        Signature
+      </button>
+
+      <button class="nav-item" data-edit="terms" id="nav-terms">
+        <svg class="nav-icon-svg" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd"
+            d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z"
+            clip-rule="evenodd" />
+        </svg>
+        Terms &amp; Conditions
+      </button>
+    </nav>
+
+    <div class="sidebar-section-label">Settings</div>
+    <div class="sidebar-settings">
+      
+
+
+    </div>
+
+    <div class="sidebar-actions">
+      <button class="action-btn action-secondary" id="btnSetup" type="button">
+        <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+          <path d="M10 2a1 1 0 011 1v1.07a6.99 6.99 0 012.1.87l.76-.76a1 1 0 011.42 1.42l-.76.76c.4.63.7 1.34.87 2.1h1.07a1 1 0 110 2h-1.07a6.99 6.99 0 01-.87 2.1l.76.76a1 1 0 01-1.42 1.42l-.76-.76a6.99 6.99 0 01-2.1.87V16a1 1 0 11-2 0v-1.07a6.99 6.99 0 01-2.1-.87l-.76.76a1 1 0 01-1.42-1.42l.76-.76a6.99 6.99 0 01-.87-2.1H3a1 1 0 110-2h1.07a6.99 6.99 0 01.87-2.1l-.76-.76A1 1 0 015.6 4.26l.76.76a6.99 6.99 0 012.1-.87V3a1 1 0 011-1zm0 5a3 3 0 100 6 3 3 0 000-6z" />
+        </svg>
+        Business Setup
+      </button>
+      <button class="action-btn action-secondary d-none" id="btnReset" type="button">
+        <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+          <path fill-rule="evenodd" d="M4 4a1 1 0 011.7-.7l1.1 1.1A7 7 0 1110 17a1 1 0 110-2 5 5 0 10-2.2-9.5l1.5 1.5A1 1 0 018.6 8.7H4.5a1 1 0 01-1-1V4z" clip-rule="evenodd" />
+        </svg>
+        Reset Invoice
+      </button>
+      <button class="action-btn action-danger" id="btnClearSavedData" type="button">
+        <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+          <path d="M7 2a1 1 0 00-1 1v1H3a1 1 0 100 2h1v10a2 2 0 002 2h8a2 2 0 002-2V6h1a1 1 0 100-2h-3V3a1 1 0 00-1-1H7zm1 2V4h4v1H8zm0 3a1 1 0 012 0v8a1 1 0 11-2 0V7zm4 0a1 1 0 012 0v8a1 1 0 11-2 0V7z" />
+        </svg>
+        Clear Saved Data
+      </button>
+    </div>
+
+  </aside>
+
+  <!-- ===================== MAIN ===================== -->
+  <div class="main-wrapper">
+
+    <header class="topbar no-print">
+      <div class="topbar-left">
+        <h1 class="topbar-title text-dark">Tax Invoice Preview</h1>
+      </div>
+
+      <div class="topbar-center">
+        <div class="setting-row topbar-setting topbar-price-setting">
+          <label class="setting-label" for="pm">Price Mode</label>
+          <select id="pm" class="setting-select form-select" title="Price mode">
+            <option value="excl">GST added on top of rate</option>
+            <option value="incl">GST includes in rate</option>
+          </select>
+        </div>
+        <div class="setting-row topbar-setting topbar-copies-setting">
+          <label class="setting-label" for="cp">Copies to Print</label>
+          <select id="cp" class="setting-select form-select" title="Copies to print">
+            <option value="1">1 copy</option>
+            <option value="2">2 copies</option>
+            <option value="3">3 copies</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="topbar-actions">
+        <button id="btnNew" class="topbar-btn topbar-btn-secondary">
+          <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd"
+              d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
+              clip-rule="evenodd" />
+          </svg>
+          New Invoice
+        </button>
+
+
+        
+        <button id="btnPrint" class="topbar-btn topbar-btn-primary">
+          <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd"
+              d="M5 4v3H4a2 2 0 00-2 2v3a2 2 0 002 2h1v2a1 1 0 001 1h8a1 1 0 001-1v-2h1a2 2 0 002-2V9a2 2 0 00-2-2h-1V4a1 1 0 00-1-1H6a1 1 0 00-1 1zm2 0h6v3H7V4zm-1 9v-1h8v1H6zm8-4a1 1 0 11-2 0 1 1 0 012 0z"
+              clip-rule="evenodd" />
+          </svg>
+          Print / Save PDF
+        </button>
+      </div>
+
+    </header>
+
+    <main id="sheets"></main>
+
+  </div>
+
+  <!-- ===================== EDITOR PANEL ===================== -->
+  <div class="modal fade no-print editor-modal" id="ed" tabindex="-1" aria-labelledby="edTitle" aria-hidden="true">
+    <div class="modal-dialog editor-modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header border-bottom">
+          <h5 id="edTitle" class="modal-title mb-0 fw-semibold"></h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body" id="edBody"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade no-print" id="newInvoiceModal" tabindex="-1" aria-labelledby="newInvoiceTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="newInvoiceTitle">Start a new invoice?</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          Your seller, bank, notes, and terms will be kept. The current items and customer details will be cleared.
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-primary" id="btnConfirmNewInvoice">Start new invoice</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade no-print" id="messageModal" tabindex="-1" aria-labelledby="messageTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="messageTitle">Notice</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body" id="messageBody"></div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-primary" data-bs-dismiss="modal">OK</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade no-print" id="resetConfirmModal" tabindex="-1" aria-labelledby="resetConfirmTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="resetConfirmTitle">Reset invoice?</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          Your current invoice details will be replaced with the demo example. Business Setup will open next so you can review your business details.
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-danger" id="btnConfirmReset">Reset Invoice</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade no-print" id="clearDataModal" tabindex="-1" aria-labelledby="clearDataTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="clearDataTitle">Clear saved data?</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          This removes this app's saved invoice and business setup data from this browser. This cannot be undone. The demo will load afterward, and the welcome instructions will appear again.
+          <div class="clear-data-error" id="clearDataError" role="alert" hidden></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-danger" id="btnConfirmClearData">Clear Saved Data</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade no-print" id="welcomeModal" tabindex="-1" aria-labelledby="welcomeTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="welcomeTitle">Welcome to InvoiceGen</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body welcome-body">
+          <p>Before creating an invoice, set up your business details:</p>
+          <ol>
+            <li>Choose <strong>Business Setup</strong> from the Settings menu on the left.</li>
+            <li>Follow the steps to enter Seller Info, Bank &amp; UPI, Signature, and Terms &amp; Conditions.</li>
+            <li>Use <strong>Next</strong> and <strong>Back</strong> to move through the setup. Your details are saved as you go.</li>
+          </ol>
+          <div class="welcome-storage-note">
+            Your invoice and business details are stored in this browser's local storage, not in an online database. They stay in this browser on this device and are not synced to other devices. Clearing browser data may remove them.
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Explore demo</button>
+          <button type="button" class="btn btn-primary" id="btnWelcomeSetup">Set up my business</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+  <script src="app.js"></script>
+</body>
+
+</html>
