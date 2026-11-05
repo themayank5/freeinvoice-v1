@@ -7,6 +7,7 @@ const WELCOME_KEY = `${KEY}_welcome_seen`;
 const STATES = [['01', 'Jammu & Kashmir'], ['02', 'Himachal Pradesh'], ['03', 'Punjab'], ['04', 'Chandigarh'], ['05', 'Uttarakhand'], ['06', 'Haryana'], ['07', 'Delhi'], ['08', 'Rajasthan'], ['09', 'Uttar Pradesh'], ['10', 'Bihar'], ['11', 'Sikkim'], ['12', 'Arunachal Pradesh'], ['13', 'Nagaland'], ['14', 'Manipur'], ['15', 'Mizoram'], ['16', 'Tripura'], ['17', 'Meghalaya'], ['18', 'Assam'], ['19', 'West Bengal'], ['20', 'Jharkhand'], ['21', 'Odisha'], ['22', 'Chhattisgarh'], ['23', 'Madhya Pradesh'], ['24', 'Gujarat'], ['26', 'Dadra & Nagar Haveli and Daman & Diu'], ['27', 'Maharashtra'], ['29', 'Karnataka'], ['30', 'Goa'], ['31', 'Lakshadweep'], ['32', 'Kerala'], ['33', 'Tamil Nadu'], ['34', 'Puducherry'], ['35', 'Andaman & Nicobar'], ['36', 'Telangana'], ['37', 'Andhra Pradesh'], ['38', 'Ladakh']];
 const LABELS = ['ORIGINAL FOR RECIPIENT', 'DUPLICATE FOR TRANSPORTER', 'TRIPLICATE FOR SUPPLIER'];
 const QUANTITY_UNITS = ['Nos', 'Kg', 'Gm', 'Litre', 'Metre', 'Sq. metre', 'Box', 'Packet', 'Set', 'Pair', 'Dozen'];
+const REQUIRED_TERM = 'Goods once sold cannot be taken back or exchanged.';
 const GST_RE = /^\d{2}[A-Z]{5}\d{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/;
 const IFSC_RE = /^[A-Z]{4}0[A-Z0-9]{6}$/;
 
@@ -32,7 +33,7 @@ const EMPTY_STATE = {
   items: [{ name: '', hsn: '', rate: '', qty: '', unit: 'Nos', unitExplicit: false, gst: '', disc: '' }],
   bank: { bank: '', acc: '', ifsc: '', branch: '', upi: '', qrAmt: false },
   sign: { sig: null, companyName: '' },
-  terms: { list: [''] },
+  terms: { list: [REQUIRED_TERM] },
   priceMode: 'excl', round: false, copies: 1
 };
 const DEMO_DATA = {
@@ -78,8 +79,8 @@ const DEMO_DATA = {
   },
   terms: {
     list: [
+      REQUIRED_TERM,
       'This is a demo invoice. Replace these terms with your own.',
-      'Goods once sold cannot be taken back or exchanged.'
     ]
   }
 };
@@ -107,12 +108,18 @@ function load() {
   return structuredClone(DEMO_DATA);
 }
 function normalizeTerms(data) {
-  if (Array.isArray(data.terms?.list)) return data;
-  const legacyTerms = typeof data.terms?.text === 'string' ? data.terms.text : '';
+  const savedTerms = Array.isArray(data.terms?.list)
+    ? data.terms.list
+    : (typeof data.terms?.text === 'string' ? data.terms.text.split(/\r?\n/).map(term => term.trim()).filter(Boolean) : []);
+  const additionalTerms = savedTerms
+    .map(term => String(term ?? '').trim())
+    .filter(term => term && term !== REQUIRED_TERM)
+    .slice(0, 4);
   return {
     ...data,
     terms: {
-      list: legacyTerms.split(/\r?\n/).map(term => term.trim()).filter(Boolean)
+      ...data.terms,
+      list: [REQUIRED_TERM, ...additionalTerms]
     }
   };
 }
@@ -628,10 +635,6 @@ function sheetHTML(label) {
     ? `<tr><td colspan="6">Round off</td><td colspan="2">${(C.roundoff < 0 ? '-' : '') + rs(Math.abs(C.roundoff))}</td></tr>`
     : '';
   const printTotals = `<tr><td colspan="6">Taxable Amount</td><td colspan="2">${hasItems ? rs(C.taxable) : ''}</td></tr>${printTaxRows}${printRoundRow}<tr><td colspan="6">Total</td><td colspan="2"><b>${hasItems ? rs(C.total) : ''}</b></td></tr>`;
-  const printPlaceholderRows = Array.from({ length: Math.max(0, 15 - C.rows.length) }, () =>
-    '<tr class="print-placeholder-row"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>'
-  ).join('');
-
   const items = C.rows.map((r, i) => `<tr>
     <td class="c">${i + 1}</td><td ><b>${esc(r.name)}</b></td><td class="c">${esc(r.hsn)}</td>
     <td class="n">${rs(r.unit)}</td><td class="c">${r.q}</td><td class="n">${rs(r.tx)}</td>
@@ -643,7 +646,7 @@ function sheetHTML(label) {
     q.addData(`upi://pay?pa=${b.upi}&pn=${encodeURIComponent(s.name)}${b.qrAmt ? '&am=' + C.total.toFixed(2) : ''}&cu=INR`);
     q.make(); qr = q.createImgTag(3, 0);
   }
-  const terms = S.terms.list.filter(term => term.trim()).map((term, i) => `${i + 1}. ${esc(term)}`).join('<br>');
+  const terms = S.terms.list.slice(0, 5).filter(term => term.trim()).map((term, i) => `${i + 1}. ${esc(term)}`).join('<br>');
   const ship = c.shipSame ? c.billing : c.shipping;
   const shipContact = c.shipSame
     ? `${c.phone ? '<br>Phone: ' + esc(c.phone) : ''}${c.email ? '<br>Email: ' + esc(c.email) : ''}${c.gstin ? '<br>GSTIN: ' + esc(c.gstin) : ''}`
@@ -653,16 +656,16 @@ function sheetHTML(label) {
   <div class="top"><h1>TAX INVOICE</h1><span>${label}</span></div>
 
   <div class="blk two sellerrow border-bottom-0">
-    <div class="cell border-end-0 align-items-center">${eb('seller')}
+    <div class="cell align-items-center">${eb('seller')}
       <div><b class="comp-name">${esc(s.name)}</b><br>GSTIN ${esc(s.gstin)}<br><span class="address-text">${ml(s.addr)}</span><br>Mobile ${esc(s.mobile)}<br>Email ${esc(s.email)}</div>
       <div class="logo">${s.logo ? `<img src="${s.logo}" alt="Logo">` : ''}</div>
     </div>
-    <div class="cell p0 border-start-0"><div class="meta sec">${eb('meta')}
+    <div class="cell p0"><div class="meta sec">${eb('meta')}
       ${row('Invoice No', esc(m.no))}${dateRow('Invoice Date', m.date, 'date')}${row('Place of Supply', stName(m.pos))}${dateRow('Due Date', m.due, 'due')}
     </div></div>
   </div>
 
-  <div class="blk two">
+  <div class="blk two customer-block">
     <div class="cell cust-cell border-end-0"><div class="cust-header"><b class="cust-section-title cust-heading">Customer Details:</b>
       <div class="cust-picker-wrap no-print">
         <input type="text" class="cust-search-input dropdown-toggle" placeholder="Search or select customer…" value="${esc(c.name)}" data-custpick="1" data-bs-toggle="dropdown" aria-expanded="false" autocomplete="off">
@@ -694,6 +697,10 @@ function sheetHTML(label) {
   <table class="items"><thead style="background: #e3e3e385;"><tr><th>#</th><th class="text-start">Item</th><th class="text-start">HSN/SAC</th><th class="text-start">Rate</th><th class="no-print text-start">Qty</th><th class="print-only-th">Qty</th><th class="text-start">Value</th><th class="no-print text-start">GST %</th><th class="text-start">Tax Amount</th><th class="text-end">Total Amount</th><th class="no-print">Delete</th></tr></thead>
   <tbody>${C.rows.map((r, i) => {
     const quantityUnit = QUANTITY_UNITS.includes(S.items[i].unit) ? S.items[i].unit : 'Nos';
+    const rateFitsOneLine = Math.abs(r.unit) <= 10000000;
+    const valueFitsOneLine = Math.abs(r.tx) <= 10000000;
+    const taxFitsOneLine = Math.abs(r.tax) <= 10000000;
+    const totalFitsOneLine = Math.abs(r.amt) <= 10000000;
     return `<tr>
     <td class="c">${i + 1}</td>
     <td class="item-name-cell">
@@ -718,8 +725,8 @@ function sheetHTML(label) {
       <input class="inline-item-field inline-hsn no-print" type="text" placeholder="HSN/SAC" value="${esc(r.hsn)}" data-ihsn="${i}" aria-label="HSN/SAC for item ${i + 1}">
       <span class="print-only-text">${esc(r.hsn)}</span>
     </td>
-    <td class="n text-start">
-      <span class="inline-money-field no-print"><span aria-hidden="true">₹</span><input class="inline-item-field inline-rate" type="number" min="0" step="any" placeholder="Rate" value="${S.items[i].rate === '' ? '' : r.unit.toFixed(2)}" data-irate="${i}" aria-label="Rate for item ${i + 1}"></span>
+    <td class="n text-start ${rateFitsOneLine ? 'currency-one-line' : ''}">
+      <span class="inline-money-field no-print"><span aria-hidden="true">₹</span><input class="inline-item-field inline-rate" type="number" min="0" step="any" placeholder="0.00" value="${+S.items[i].rate > 0 ? r.unit.toFixed(2) : ''}" data-irate="${i}" aria-label="Rate for item ${i + 1}"></span>
       <span class="print-only-text">${r.filled ? rs(r.unit) : ''}</span>
     </td>
     <td class="c no-print text-start"><div class="dropdown quantity-unit-picker">
@@ -745,17 +752,17 @@ function sheetHTML(label) {
       </div>
     </div></td>
     <td class="c print-only-td text-start">${+S.items[i].qty > 0 ? `${r.q} ${esc(quantityUnit)}` : ''}</td>
-    <td class="n text-start">
+    <td class="n text-start ${valueFitsOneLine ? 'currency-one-line' : ''}">
       <span class="inline-money-field no-print"><span aria-hidden="true">₹</span><input class="inline-item-field inline-value" type="number" min="0" step="any" placeholder="Value" value="${r.filled ? r.tx.toFixed(2) : ''}" data-ivalue="${i}" aria-label="Taxable value for item ${i + 1}"></span>
       <span class="print-only-text">${r.filled ? rs(r.tx) : ''}</span>
     </td>
     <td class="c no-print text-start "><select class="inline-gst form-select form-select-sm" data-igst="${i}"><option value="" disabled ${S.items[i].gst === '' ? 'selected' : ''}>GST</option>${[0, 5, 12, 18, 28].map(g => `<option value="${g}" ${S.items[i].gst !== '' && g == r.g ? 'selected' : ''}>${g}%</option>`).join('')}</select></td>
-    <td class="n text-start">${r.filled ? `${rs(r.tax)}<b> (${taxLabel} ${r.g}%)</b>` : ''}</td>
-    <td class="n">${r.filled ? rs(r.amt) : ''}</td>
+    <td class="n text-start ${taxFitsOneLine ? 'currency-one-line' : ''}">${r.filled ? `${rs(r.tax)}<br><b>(${taxLabel} ${r.g}%)</b>` : ''}</td>
+    <td class="n ${totalFitsOneLine ? 'currency-one-line' : ''}">${r.filled ? rs(r.amt) : ''}</td>
     <td class="c no-print"><button class="inline-del" data-idel="${i}" title="Remove">✕</button></td>
   </tr>`;
-  }).join('')}${printPlaceholderRows}</tbody>
-  <tfoot class="print-only-totals">${printTotals}</tfoot></table>
+  }).join('')}</tbody>
+  </table>
   <div class="no-print items-footer"><button class="inline-add-row" data-addrow="1">Add Row <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor">
             <path fill-rule="evenodd"
               d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
@@ -764,6 +771,8 @@ function sheetHTML(label) {
   </div>
 
   <div class="blk tot no-print">${row('Taxable Amount', hasItems ? rs(C.taxable) : '')}${taxRows}${roundRow}<div>Total</div><div class="big">${hasItems ? rs(C.total) : ''}</div></div>
+  <div class="invoice-summary">
+  <table class="invoice-totals print-only-totals"><tbody>${printTotals}</tbody></table>
   ${hasItems ? `<div class="blk words text-end inword"><span class="fw-light me-2">Total amount (in words): </span>${totalWords(C.total)}</div>` : ''}
 
   <div class="blk two">
@@ -775,8 +784,78 @@ function sheetHTML(label) {
   <div class="blk">
     <div class="cell terms-cell">${eb('terms')}<b>Terms and Conditions:</b><br> <span class="fw-light">${terms}</span></div>
   </div>
+  </div>
   <div class="foot">Page 1 / 1 &nbsp; This is a digitally signed document.</div>
 </section>`;
+}
+
+function preparePrintRows() {
+  $('#sheets').querySelectorAll('.sheet').forEach(sheet => {
+    const body = sheet.querySelector('.items tbody');
+    const printRows = [];
+
+    const descriptionLines = row => {
+      const textNode = row.querySelector('.item-name-cell .print-only-text b')?.firstChild;
+      if (!textNode || textNode.nodeType !== Node.TEXT_NODE || !textNode.textContent) return [];
+      const range = document.createRange();
+      const lines = [];
+      let line = '';
+      let lineTop = null;
+      for (let offset = 0; offset < textNode.length; offset++) {
+        range.setStart(textNode, offset);
+        range.setEnd(textNode, offset + 1);
+        const rect = range.getBoundingClientRect();
+        if (lineTop !== null && Math.abs(rect.top - lineTop) > 1) {
+          lines.push(line.trim());
+          line = '';
+        }
+        lineTop = rect.top;
+        line += textNode.textContent[offset];
+      }
+      if (line.trim()) lines.push(line.trim());
+      return lines.filter(Boolean);
+    };
+
+    [...body.querySelectorAll(':scope > tr')].forEach(sourceRow => {
+      const lines = descriptionLines(sourceRow);
+      if (lines.length < 2) {
+        printRows.push(sourceRow);
+        return;
+      }
+
+      lines.forEach((line, lineIndex) => {
+        const row = sourceRow.cloneNode(true);
+        const description = row.querySelector('.item-name-cell .print-only-text b');
+        if (description) description.textContent = line;
+        if (lineIndex > 0) {
+          row.classList.add('item-description-continuation');
+          [...row.cells].forEach((cell, cellIndex) => {
+            if (cellIndex !== 1) cell.textContent = '';
+          });
+        }
+        if (lineIndex < lines.length - 1) row.classList.add('item-description-fragment');
+        printRows.push(row);
+      });
+    });
+
+    body.replaceChildren(...printRows);
+  });
+
+  const printableHeight = 277 * 96 / 25.4;
+  $('#sheets').querySelectorAll('.sheet').forEach(sheet => {
+    const fitsOnPage = sheet.getBoundingClientRect().height <= printableHeight * 0.9;
+    sheet.classList.toggle('invoice-single-page', fitsOnPage);
+    if (!fitsOnPage) return;
+
+    const body = sheet.querySelector('.items tbody');
+    const lastRow = body.querySelector(':scope > tr:last-child');
+    if (!lastRow) return;
+    const filler = lastRow.cloneNode(true);
+    filler.className = 'print-body-filler';
+    [...filler.cells].forEach(cell => cell.replaceChildren());
+    filler.style.height = '100%';
+    body.append(filler);
+  });
 }
 
 function render(n = 1) {
@@ -845,16 +924,17 @@ function itemsEditor() {
 }
 
 function termsEditor() {
-  const terms = S.terms.list.length ? S.terms.list : [''];
+  const terms = (S.terms.list.length ? S.terms.list : ['']).slice(0, 5);
+  const atTermLimit = S.terms.list.length >= 5;
   const fields = terms.map((term, index) => `
     <div class="terms-editor-row">
       <label class="form-label" for="term-${index}">Term ${index + 1}</label>
       <div class="terms-editor-input">
-        <textarea class="form-control" id="term-${index}" rows="2" placeholder="Enter a term or condition" data-term-index="${index}">${esc(term)}</textarea>
-        <button class="btn btn-outline-danger" type="button" aria-label="Remove term ${index + 1}" data-term-remove="${index}">Remove</button>
+        <textarea class="form-control" id="term-${index}" rows="2" placeholder="Enter a term or condition" data-term-index="${index}" ${index === 0 ? 'required aria-required="true"' : ''}>${esc(term)}</textarea>
+        ${index === 0 ? '' : `<button class="btn btn-outline-danger" type="button" aria-label="Remove term ${index + 1}" data-term-remove="${index}">Remove</button>`}
       </div>
     </div>`).join('');
-  return `${fields}<button class="btn btn-outline-primary" type="button" data-term-add>Add more terms</button>`;
+  return `${fields}<button class="btn btn-outline-primary" type="button" data-term-add ${atTermLimit ? 'disabled' : ''}>${atTermLimit ? 'Maximum 5 terms' : 'Add more terms'}</button>`;
 }
 
 const SETUP_STEPS = [
@@ -1001,6 +1081,7 @@ document.addEventListener('click', e => {
     bootstrap.Modal.getOrCreateInstance('#ed').hide();
   }
   if (t.closest('[data-term-add]')) {
+    if (S.terms.list.length >= 5) return;
     S.terms.list.push('');
     save();
     render();
@@ -1009,6 +1090,7 @@ document.addEventListener('click', e => {
   }
   if (t.closest('[data-term-remove]')) {
     const index = +t.closest('[data-term-remove]').dataset.termRemove;
+    if (index === 0) return;
     S.terms.list.splice(index, 1);
     save();
     render();
@@ -1085,6 +1167,12 @@ document.addEventListener('click', e => {
     const option = quantityOption || unitOption;
     const row = +option.dataset.row;
     if (!S.items[row]) return;
+    const unitWasInherited = row > 0
+      && !S.items[row].unitExplicit
+      && S.items.slice(0, row).some(item => item.unitExplicit && item.unit === S.items[row].unit);
+    const currentToggle = document.querySelectorAll('.quantity-unit-toggle')[row];
+    const unitFollowedQuantity = unitOption && currentToggle?.dataset.quantityBeforeUnit === 'true';
+    const quantityNeedsUnit = quantityOption && !S.items[row].unitExplicit && !unitWasInherited;
     if (quantityOption) {
       S.items[row].qty = +quantityOption.dataset.quantity;
       openCustomQuantityRow = -1;
@@ -1098,8 +1186,13 @@ document.addEventListener('click', e => {
     }
     save();
     render();
-    const toggle = document.querySelectorAll('.quantity-unit-toggle')[row];
-    if (toggle) bootstrap.Dropdown.getOrCreateInstance(toggle).show();
+    if (quantityNeedsUnit || (unitOption && !unitFollowedQuantity)) {
+      const toggle = document.querySelectorAll('.quantity-unit-toggle')[row];
+      if (toggle) {
+        if (quantityNeedsUnit) toggle.dataset.quantityBeforeUnit = 'true';
+        bootstrap.Dropdown.getOrCreateInstance(toggle).show();
+      }
+    }
     return;
   }
 
@@ -1295,7 +1388,13 @@ $('#edBody').addEventListener('input', e => {
   if (t.type === 'file') return;
   const v = t.type === 'checkbox' ? t.checked : t.value;
   if (t.dataset.termIndex !== undefined) {
-    S.terms.list[+t.dataset.termIndex] = v;
+    const termIndex = +t.dataset.termIndex;
+    if (termIndex === 0 && !String(v).trim()) {
+      t.value = REQUIRED_TERM;
+      S.terms.list[0] = REQUIRED_TERM;
+    } else {
+      S.terms.list[termIndex] = v;
+    }
   } else if (t.dataset.i !== undefined) {
     const num = ['rate', 'qty', 'disc', 'gst'].includes(t.dataset.k);
     S.items[+t.dataset.i][t.dataset.k] = num ? (v === '' ? 0 : +v) : v;
@@ -1352,8 +1451,22 @@ document.addEventListener('change', e => {
 
 
 
-$('#btnPrint').onclick = () => { render(S.copies); printing = true; window.print(); };
-window.onafterprint = () => { if (printing) { printing = false; render(1); } };
+$('#btnPrint').onclick = () => {
+  document.body.classList.add('printing');
+  render(S.copies);
+  printing = true;
+  requestAnimationFrame(() => {
+    preparePrintRows();
+    window.print();
+  });
+};
+window.onafterprint = () => {
+  if (printing) {
+    printing = false;
+    document.body.classList.remove('printing');
+    render(1);
+  }
+};
 
 $('#btnNew').onclick = () => {
   bootstrap.Modal.getOrCreateInstance('#newInvoiceModal').show();

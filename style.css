@@ -740,6 +740,8 @@ body {
   max-height: 100px;
       border: 2px solid;
     border-radius: 10px;
+        min-height: 100px;
+    min-width: 100px;
 }
 
 .meta {
@@ -1012,6 +1014,16 @@ table.items {
   border-collapse: collapse;
   margin-top: -1.5px;
 }
+
+.items th:nth-child(2),
+.items td:nth-child(2) {
+  width: 20%;
+}
+
+.items th:nth-child(3),
+.items td:nth-child(3) {
+  width: 10%;
+}
 .Shipping1{
       border-left: 1px solid;
           height: stretch;
@@ -1030,6 +1042,8 @@ table.items {
 
 .items td.n {
   text-align: right;
+  overflow-wrap: anywhere;
+  word-break: normal;
 }
 
 .items td.c {
@@ -1037,6 +1051,11 @@ table.items {
 }
 
 /* — Inline item picker — */
+
+.items td.currency-one-line {
+  font-size: 12px;
+  white-space: nowrap;
+}
 .item-name-cell {
   position: relative;
   min-width: 170px;
@@ -1143,10 +1162,6 @@ table.items {
 }
 
 .print-only-th {
-  display: none;
-}
-
-.print-placeholder-row {
   display: none;
 }
 
@@ -1455,6 +1470,106 @@ a:focus-visible,
 
 .print-only-totals {
   display: none;
+}
+
+body.printing {
+  background: #fff;
+  display: block;
+}
+
+body.printing .no-print,
+body.printing .modal {
+  display: none !important;
+}
+
+body.printing .main-wrapper {
+  margin-left: 0;
+}
+
+body.printing #sheets {
+  width: 206mm;
+  padding: 0;
+  overflow: visible;
+}
+
+body.printing .sheet {
+  width: 100%;
+  margin: 0;
+  border: 0;
+  padding: 0;
+  box-shadow: none;
+}
+
+body.printing .print-only-text {
+  display: inline !important;
+}
+
+body.printing .item-name-cell .print-only-text {
+  white-space: pre-line;
+}
+
+body.printing .print-only-th,
+body.printing .print-only-td {
+  display: table-cell !important;
+}
+
+body.printing .items th {
+  padding: 2px 7px !important;
+}
+
+body.printing .items {
+  table-layout: fixed;
+}
+
+body.printing .items th:nth-child(1),
+body.printing .items td:nth-child(1) { width: 4%; }
+body.printing .items th:nth-child(2),
+body.printing .items th:nth-child(2),
+body.printing .items td:nth-child(2) { width: 23%; overflow-wrap: anywhere; }
+body.printing .items th:nth-child(3),
+body.printing .items td:nth-child(3) { width: 10%; }
+body.printing .items th:nth-child(4),
+body.printing .items td:nth-child(4) { width: 14%; }
+body.printing .items th:nth-child(6),
+body.printing .items td:nth-child(6) { width: 8%; }
+body.printing .items th:nth-child(7),
+body.printing .items td:nth-child(7) { width: 14%; }
+body.printing .items th:nth-child(9),
+body.printing .items td:nth-child(9) { width: 13%; }
+body.printing .items th:nth-child(10),
+body.printing .items td:nth-child(10) { width: 14%; }
+
+body.printing .items td.currency-one-line {
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+body.printing .items tbody td {
+  padding: 2px 7px;
+}
+
+body.printing .foot {
+  display: none;
+}
+
+body.printing .print-only-totals {
+  display: table-row-group !important;
+}
+
+body.printing .invoice-totals {
+  display: table !important;
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+  margin-top: -1.5px;
+}
+
+body.printing .invoice-totals td:first-child {
+  width: 70%;
+}
+
+body.printing .invoice-totals td {
+  overflow-wrap: anywhere;
 }
 
 .tot>div:nth-child(n+3) {
@@ -1930,6 +2045,32 @@ textarea{
     break-after: page;
   }
 
+  .sheet.invoice-single-page {
+    display: flex;
+    flex-direction: column;
+    min-height: 277mm;
+  }
+
+  .sheet.invoice-single-page .invoice-summary {
+    margin-top: auto;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .sheet.invoice-single-page > .sec {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+  }
+
+  .sheet.invoice-single-page > .sec > .items {
+    flex: 1 1 auto;
+  }
+
+  .sheet.invoice-single-page .print-body-filler td {
+    padding: 0;
+  }
+
   .sheet:last-child {
     page-break-after: auto;
     break-after: auto;
@@ -1963,6 +2104,10 @@ textarea{
     display: inline !important;
   }
 
+  .item-name-cell .print-only-text {
+    white-space: pre-line;
+  }
+
   .print-only-th {
     display: table-cell !important;
   }
@@ -1971,14 +2116,51 @@ textarea{
     padding: 2px 7px !important;
   }
 
-  .items tbody td {
-    height: 26px;
-    padding: 2px 7px;
-    box-sizing: border-box;
+  .items {
+    table-layout: fixed;
+  }
+  .items thead {
+    display: table-header-group;
+  }
+  
+  .items tbody tr {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  
+  .items tbody tr.item-description-fragment td {
+    border-bottom: 0;
+  }
+  
+  .items tbody tr.item-description-continuation td {
+    border-top: 0;
   }
 
-  .items tbody .print-placeholder-row {
-    display: table-row !important;
+  .items th:nth-child(1),
+  .items td:nth-child(1) { width: 4%; }
+  .items th:nth-child(2),
+  .items td:nth-child(2) { width: 23%; overflow-wrap: anywhere; }
+  .items th:nth-child(3),
+  .items td:nth-child(3) { width: 10%; }
+  .items th:nth-child(4),
+  .items td:nth-child(4) { width: 14%; }
+  .items th:nth-child(6),
+  .items td:nth-child(6) { width: 8%; }
+  .items th:nth-child(7),
+  .items td:nth-child(7) { width: 14%; }
+  .items th:nth-child(9),
+  .items td:nth-child(9) { width: 13%; }
+  .items th:nth-child(10),
+  .items td:nth-child(10) { width: 14%; }
+
+  .items td.currency-one-line {
+    font-size: 12px;
+    white-space: nowrap;
+  }
+
+  .items tbody td {
+    padding: 2px 7px;
+    box-sizing: border-box;
   }
 
   .print-only-td {
@@ -1987,6 +2169,22 @@ textarea{
 
   .print-only-totals {
     display: table-row-group !important;
+  }
+
+  .invoice-totals {
+    display: table !important;
+    width: 100%;
+    table-layout: fixed;
+    border-collapse: collapse;
+    margin-top: -1.5px;
+  }
+
+  .invoice-totals td:first-child {
+    width: 70%;
+  }
+
+  .invoice-totals td {
+    overflow-wrap: anywhere;
   }
 
   .print-only-totals td {
@@ -2001,4 +2199,5 @@ textarea{
   .print-only-totals td + td {
     border-left: 1.5px solid #000;
   }
+
 }
